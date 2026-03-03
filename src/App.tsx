@@ -1082,7 +1082,7 @@ export default function App() {
           Dibuat dengan <Heart className="w-4 h-4 text-red-500 fill-red-500" /> untuk Umat
         </div>
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium tracking-wide">
-          CintaQuran © 2026
+          by: agustriian
         </p>
       </footer>
 
