@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+// @ts-nocheck
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, 
@@ -7,8 +8,6 @@ import {
   Home as HomeIcon, 
   RefreshCw, 
   ChevronLeft, 
-  Star, 
-  Award, 
   CheckCircle2, 
   XCircle,
   Clock,
@@ -26,14 +25,12 @@ import {
 } from 'lucide-react';
 
 // ==========================================
-// ⚙️ CONFIG & UTILS (Simulating utils/)
+// ⚙️ CONFIG & UTILS
 // ==========================================
 const API_BASE = 'https://api.alquran.cloud/v1';
-const QURAN_TOTAL_AYAHS = 6236;
 const QUESTION_COUNT = 10;
 const TIMER_SECONDS = 45;
 
-// Mengambil font Amiri dari Google Fonts
 const injectFont = () => {
   if (!document.getElementById('amiri-font')) {
     const link = document.createElement('link');
@@ -62,7 +59,7 @@ const shuffleArray = (array) => {
 };
 
 // ==========================================
-// 🪝 HOOKS (Simulating hooks/)
+// 🪝 HOOKS
 // ==========================================
 const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {
@@ -89,13 +86,13 @@ const useLocalStorage = (key, initialValue) => {
 };
 
 // ==========================================
-// 🌐 API SERVICES (Simulating services/)
+// 🌐 API SERVICES
 // ==========================================
 const fetchAllSurahs = async () => {
   try {
     const res = await fetch(`${API_BASE}/surah`);
     const data = await res.json();
-    return data.data; // Array of 114 surahs
+    return data.data; 
   } catch (error) {
     console.error("Failed to fetch surahs", error);
     return [];
@@ -128,7 +125,6 @@ const fetchGameData = async (mode, juzNumber, allSurahs, gameType = 'tebak_ayat'
   try {
     let ayahs = [];
     
-    // Ambil data berdasarkan mode
     if (mode === 'random') {
       const randomIds = generateUniqueRandoms(QUESTION_COUNT, 1, gameType === 'sambung_ayat' ? 6235 : 6236);
       if (gameType === 'sambung_ayat') {
@@ -224,7 +220,7 @@ const fetchGameData = async (mode, juzNumber, allSurahs, gameType = 'tebak_ayat'
 };
 
 // ==========================================
-// 🧩 COMPONENTS (Simulating components/)
+// 🧩 COMPONENTS
 // ==========================================
 
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, icon }) => {
@@ -256,7 +252,7 @@ const Card = ({ children, className = '' }) => (
 );
 
 // ==========================================
-// 📄 PAGES (Simulating pages/)
+// 📄 PAGES
 // ==========================================
 
 const QuranSurahListPage = ({ onNavigate, onBack }) => {
@@ -1018,7 +1014,6 @@ export default function App() {
   };
 
   return (
-    // DIUBAH: Ditambahkan flex dan flex-col agar footer bisa didorong ke paling bawah
     <div className={`min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 font-sans transition-colors duration-300 selection:bg-emerald-200`}>
       <nav className="p-4 flex justify-end max-w-md mx-auto w-full relative z-20">
         <button 
@@ -1029,7 +1024,6 @@ export default function App() {
         </button>
       </nav>
 
-      {/* DIUBAH: Ditambahkan flex-grow agar main mengambil sisa ruang tengah */}
       <main className="flex-grow px-4 pb-12 pt-4 relative w-full">
         <AnimatePresence mode="wait">
           {currentPage === 'home' && (
@@ -1083,13 +1077,12 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {/* --- BAGIAN FOOTER BARU --- */}
       <footer className="w-full text-center py-6 mt-auto">
         <div className="flex items-center justify-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 font-medium">
           Dibuat dengan <Heart className="w-4 h-4 text-red-500 fill-red-500" /> untuk Umat
         </div>
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium tracking-wide">
-          by: agustriian
+          CintaQuran © 2026
         </p>
       </footer>
 

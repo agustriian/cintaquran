@@ -4,7 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class', // Wajib ada untuk dark mode aplikasi ini
+  darkMode: 'class',
   theme: {
     extend: {},
   },
