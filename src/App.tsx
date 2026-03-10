@@ -41,18 +41,18 @@ const injectFont = () => {
   }
 };
 
-const generateUniqueRandoms = (count, min, max) => {
+const generateUniqueRandoms = (count: number, min: number, max: number): number[] => {
   const range = max - min + 1;
   if (range <= 0) return [];
   const actualCount = Math.min(count, range);
-  const set = new Set();
+  const set = new Set<number>();
   while (set.size < actualCount) {
     set.add(Math.floor(Math.random() * range) + min);
   }
   return Array.from(set);
 };
 
-const shuffleArray = (array) => {
+const shuffleArray = (array: any[]): any[] => {
   const newArr = [...array];
   for (let i = newArr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -64,7 +64,7 @@ const shuffleArray = (array) => {
 // ==========================================
 // 🪝 HOOKS
 // ==========================================
-const useLocalStorage = (key, initialValue) => {
+const useLocalStorage = (key: string, initialValue: any) => {
   const [storedValue, setStoredValue] = useState(() => {
     try {
       const item = window.localStorage.getItem(key);
@@ -75,7 +75,7 @@ const useLocalStorage = (key, initialValue) => {
     }
   });
 
-  const setValue = (value) => {
+  const setValue = (value: any) => {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
@@ -91,7 +91,7 @@ const useLocalStorage = (key, initialValue) => {
 // ==========================================
 // 🌐 API SERVICES
 // ==========================================
-const fetchEquranSurahs = async () => {
+const fetchEquranSurahs = async (): Promise<any[]> => {
   try {
     const res = await fetch('https://equran.id/api/v2/surat');
     const data = await res.json();
@@ -102,7 +102,7 @@ const fetchEquranSurahs = async () => {
   }
 };
 
-const fetchEquranSurahDetail = async (nomor) => {
+const fetchEquranSurahDetail = async (nomor: any): Promise<any> => {
   try {
     const res = await fetch(`https://equran.id/api/v2/surat/${nomor}`);
     const data = await res.json();
@@ -113,9 +113,9 @@ const fetchEquranSurahDetail = async (nomor) => {
   }
 };
 
-const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') => {
+const fetchGameData = async (mode: string, param: any, allSurahs: any[], gameType: string = 'tebak_ayat') => {
   try {
-    let ayahs = [];
+    let ayahs: any[] = [];
     
     if (mode === 'random') {
       const randomIds = generateUniqueRandoms(QUESTION_COUNT, 1, gameType === 'sambung_ayat' ? 6235 : 6236);
@@ -167,8 +167,8 @@ const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') =>
       });
     }
 
-    const getWrongNumbers = (correct, min, max) => {
-        let w = new Set();
+    const getWrongNumbers = (correct: any, min: number, max: number): any[] => {
+        let w = new Set<any>();
         while(w.size < 3) {
             let r = Math.floor(Math.random() * (max - min + 1)) + min;
             if(r !== correct && r > 0) w.add(r);
@@ -177,7 +177,7 @@ const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') =>
     };
 
     return ayahs.map((ayah) => {
-      let correctAnswer, options = [], questionText = ayah.text, puzzleWords = [];
+      let correctAnswer: any, options: any[] = [], questionText = ayah.text, puzzleWords: any[] = [];
       const surahNomor = ayah.surah?.number || ayah.surahNumber;
       const matchedSurah = allSurahs.find(s => s.nomor === surahNomor);
       const surahNameIndo = matchedSurah ? matchedSurah.namaLatin : (ayah.surah?.englishName || `Surat ke-${surahNomor}`);
@@ -211,7 +211,7 @@ const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') =>
             questionText = ayah.text;
             correctAnswer = surahNameIndo;
             
-            let wrongSurahNames = new Set();
+            let wrongSurahNames = new Set<string>();
             while(wrongSurahNames.size < 3) {
                 let r = Math.floor(Math.random() * 114) + 1;
                 if(r !== surahNomor) {
@@ -251,10 +251,10 @@ const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') =>
 // 🧩 COMPONENTS
 // ==========================================
 
-const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, icon }) => {
+const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, icon }: any) => {
   const baseStyle = "w-full py-3 px-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
   
-  const variants = {
+  const variants: any = {
     primary: "bg-emerald-500 text-white shadow-[0_4px_0_0_#047857] hover:bg-emerald-400 active:shadow-[0_0px_0_0_#047857] active:translate-y-[4px]",
     secondary: "bg-white text-emerald-700 shadow-[0_4px_0_0_#e5e7eb] hover:bg-gray-50 active:shadow-[0_0px_0_0_#e5e7eb] active:translate-y-[4px] border border-gray-100 dark:bg-slate-800 dark:text-emerald-400 dark:border-slate-700 dark:shadow-[0_4px_0_0_#0f172a] dark:hover:bg-slate-700",
     outline: "border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30",
@@ -273,7 +273,7 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
   );
 };
 
-const Card = ({ children, className = '' }) => (
+const Card = ({ children, className = '' }: any) => (
   <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-xl shadow-emerald-900/5 border border-emerald-50 dark:border-slate-700 ${className}`}>
     {children}
   </div>
@@ -283,11 +283,11 @@ const Card = ({ children, className = '' }) => (
 // 📄 PAGES
 // ==========================================
 
-const QuranSurahListPage = ({ onNavigate, onBack, allSurahs }) => {
+const QuranSurahListPage = ({ onNavigate, onBack, allSurahs }: any) => {
   const [search, setSearch] = useState('');
   const loading = allSurahs.length === 0;
 
-  const filteredSurahs = allSurahs.filter(s => s.namaLatin.toLowerCase().includes(search.toLowerCase()));
+  const filteredSurahs = allSurahs.filter((s: any) => s.namaLatin.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-md mx-auto pb-8">
@@ -315,7 +315,7 @@ const QuranSurahListPage = ({ onNavigate, onBack, allSurahs }) => {
          </div>
       ) : (
          <div className="space-y-3">
-           {filteredSurahs.map(surah => (
+           {filteredSurahs.map((surah: any) => (
              <motion.button
                whileTap={{ scale: 0.98 }}
                key={surah.nomor}
@@ -342,16 +342,16 @@ const QuranSurahListPage = ({ onNavigate, onBack, allSurahs }) => {
   );
 };
 
-const QuranReadPage = ({ surahNumber, onBack }) => {
-  const [surah, setSurah] = useState(null);
+const QuranReadPage = ({ surahNumber, onBack }: any) => {
+  const [surah, setSurah] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   
   const [selectedQori, setSelectedQori] = useState("05"); 
-  const [currentAudioUrl, setCurrentAudioUrl] = useState(null);
+  const [currentAudioUrl, setCurrentAudioUrl] = useState<string | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [activeId, setActiveId] = useState(null); 
-  const audioRef = useRef(null);
+  const [activeId, setActiveId] = useState<any>(null); 
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     fetchEquranSurahDetail(surahNumber).then(data => {
@@ -371,12 +371,12 @@ const QuranReadPage = ({ surahNumber, onBack }) => {
     };
   }, []);
 
-  const handlePlay = (url, id) => {
+  const handlePlay = (url: string, id: any) => {
     if (currentAudioUrl === url) {
       if (isPlaying) {
-        audioRef.current.pause();
+        audioRef.current?.pause();
       } else {
-        audioRef.current.play();
+        audioRef.current?.play();
       }
     } else {
       setCurrentAudioUrl(url);
@@ -398,10 +398,10 @@ const QuranReadPage = ({ surahNumber, onBack }) => {
      </div>
   );
 
-  if (error) return (
+  if (error || !surah) return (
     <div className="text-center w-full max-w-md mx-auto mt-20">
-      <p className="text-red-500">{error}</p>
-      <Button onClick={onBack} className="mt-4">Kembali</Button>
+      <p className="text-red-500">{error || "Terjadi kesalahan"}</p>
+      <Button onClick={onBack} className="mt-4" icon={null}>Kembali</Button>
     </div>
   );
 
@@ -431,7 +431,7 @@ const QuranReadPage = ({ surahNumber, onBack }) => {
           value={selectedQori} 
           onChange={(e) => {
             setSelectedQori(e.target.value);
-            if (isPlaying) audioRef.current.pause();
+            if (isPlaying) audioRef.current?.pause();
           }}
           className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-xl px-2 py-2 outline-none border border-emerald-100 dark:border-emerald-800 max-w-[120px] truncate"
         >
@@ -463,7 +463,7 @@ const QuranReadPage = ({ surahNumber, onBack }) => {
       </Card>
 
       <div className="space-y-8">
-        {surah.ayat.map((a) => (
+        {surah.ayat.map((a: any) => (
           <div key={a.nomorAyat} className={`border-b border-slate-200 dark:border-slate-800 pb-8 transition-colors duration-500 ${activeId === a.nomorAyat ? 'bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border-transparent' : ''}`}>
             <div className="flex justify-between items-center mb-6">
               <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold shadow-sm">
@@ -496,7 +496,7 @@ const QuranReadPage = ({ surahNumber, onBack }) => {
   );
 };
 
-const HomePage = ({ onNavigate }) => {
+const HomePage = ({ onNavigate }: any) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
@@ -541,7 +541,7 @@ const HomePage = ({ onNavigate }) => {
   );
 };
 
-const GameTypeSelectionPage = ({ onNavigate, onBack }) => {
+const GameTypeSelectionPage = ({ onNavigate, onBack }: any) => {
   const types = [
     { id: 'tebak_ayat', label: 'Tebak Nomor Ayat', icon: <List size={24} className="text-emerald-500 mr-2" /> },
     { id: 'sambung_ayat', label: 'Sambung Ayat', icon: <BookOpen size={24} className="text-emerald-500 mr-2" /> },
@@ -582,7 +582,7 @@ const GameTypeSelectionPage = ({ onNavigate, onBack }) => {
   );
 };
 
-const ScopeSelectionPage = ({ onNavigate, onBack, gameType }) => {
+const ScopeSelectionPage = ({ onNavigate, onBack, gameType }: any) => {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-md mx-auto pb-8">
       <div className="flex items-center gap-4 mb-6">
@@ -606,7 +606,7 @@ const ScopeSelectionPage = ({ onNavigate, onBack, gameType }) => {
   );
 };
 
-const JuzSelectionPage = ({ onNavigate, onBack, gameType }) => {
+const JuzSelectionPage = ({ onNavigate, onBack, gameType }: any) => {
   const juzArray = Array.from({ length: 30 }, (_, i) => i + 1);
 
   return (
@@ -636,10 +636,10 @@ const JuzSelectionPage = ({ onNavigate, onBack, gameType }) => {
   );
 };
 
-const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }) => {
+const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }: any) => {
   const [search, setSearch] = useState('');
 
-  const filteredSurahs = allSurahs.filter(s => 
+  const filteredSurahs = allSurahs.filter((s: any) => 
     s.namaLatin.toLowerCase().includes(search.toLowerCase()) || 
     s.nomor.toString() === search
   );
@@ -665,7 +665,7 @@ const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }) => 
       </div>
 
       <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2 pb-20 scrollbar-hide">
-        {filteredSurahs.map(surah => (
+        {filteredSurahs.map((surah: any) => (
           <motion.button
             whileTap={{ scale: 0.98 }}
             key={surah.nomor}
@@ -678,7 +678,8 @@ const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }) => 
               </div>
               <div>
                 <h3 className="font-bold text-slate-800 dark:text-slate-100">{surah.namaLatin}</h3>
-                <p className="text-xs text-slate-500">{surah.tempatTurun === 'Mekah' ? 'Makkiyah' : 'Madaniyah'} • {surah.jumlahAyat} Ayat</p>
+                {/* Diperbarui untuk menampilkan arti surat */}
+                <p className="text-xs text-slate-500">{surah.arti} • {surah.jumlahAyat} Ayat</p>
               </div>
             </div>
             <div className="text-2xl font-arabic text-emerald-500" style={{ fontFamily: "'Amiri', serif" }}>
@@ -691,19 +692,19 @@ const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }) => 
   );
 };
 
-const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }) => {
-  const [questions, setQuestions] = useState([]);
+const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }: any) => {
+  const [questions, setQuestions] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<any>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [sessionScore, setSessionScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
 
-  const [puzzleSelected, setPuzzleSelected] = useState([]);
-  const [puzzleAvailable, setPuzzleAvailable] = useState([]);
+  const [puzzleSelected, setPuzzleSelected] = useState<any[]>([]);
+  const [puzzleAvailable, setPuzzleAvailable] = useState<any[]>([]);
 
   useEffect(() => {
     if (questions.length > 0 && questions[currentIndex]?.gameType === 'puzzle_ayat') {
@@ -712,7 +713,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
     }
   }, [currentIndex, questions]);
 
-  const handlePuzzleSelect = (word, index) => {
+  const handlePuzzleSelect = (word: any, index: any) => {
     if (isAnswered) return;
     const newAvail = [...puzzleAvailable];
     newAvail.splice(index, 1);
@@ -720,7 +721,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
     setPuzzleSelected([...puzzleSelected, word]);
   };
 
-  const handlePuzzleDeselect = (word, index) => {
+  const handlePuzzleDeselect = (word: any, index: any) => {
     if (isAnswered) return;
     const newSel = [...puzzleSelected];
     newSel.splice(index, 1);
@@ -742,7 +743,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
           setQuestions(data);
           setLoading(false);
         }
-      } catch (err) {
+      } catch (err: any) {
         if (isMounted) {
           setError(err.message);
           setLoading(false);
@@ -773,7 +774,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
     setTimeout(nextQuestion, 1500);
   };
 
-  const handleAnswer = (option) => {
+  const handleAnswer = (option: any) => {
     if (isAnswered) return;
     
     setIsAnswered(true);
@@ -795,7 +796,6 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
       setIsAnswered(false);
       setTimeLeft(TIMER_SECONDS);
     } else {
-      // Menambahkan gameType agar bisa dibaca di halaman hasil
       onFinish({ score: sessionScore, correct: correctCount, totalQuestions: questions.length, gameType: gameType });
     }
   };
@@ -828,8 +828,8 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
         <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Oops!</h3>
         <p className="text-slate-500 dark:text-slate-400 mb-6">{error}</p>
         <div className="space-y-3">
-          <Button onClick={onBack}>Kembali</Button>
-          <Button variant="secondary" onClick={onHome}>Ke Beranda</Button>
+          <Button onClick={onBack} icon={null}>Kembali</Button>
+          <Button variant="secondary" onClick={onHome} icon={null}>Ke Beranda</Button>
         </div>
       </div>
     );
@@ -851,7 +851,8 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
         
         <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow border border-slate-100 dark:border-slate-700 flex items-center gap-2">
           <Trophy className="text-yellow-500 w-4 h-4" />
-          <span className="font-bold text-slate-700 dark:text-slate-200">{sessionScore} poin</span>
+          {/* Diperbarui dari pts menjadi Poin */}
+          <span className="font-bold text-slate-700 dark:text-slate-200">{sessionScore} Poin</span>
         </div>
       </div>
 
@@ -940,12 +941,12 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
             )}
 
             {puzzleAvailable.length === 0 && !isAnswered && (
-                <Button onClick={handleCheckPuzzle}>Cek Jawaban</Button>
+                <Button onClick={handleCheckPuzzle} icon={null}>Cek Jawaban</Button>
             )}
         </div>
       ) : (
         <div className="space-y-3">
-          {currentQ.options.map((option, idx) => {
+          {currentQ.options.map((option: any, idx: any) => {
             let btnClass = "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 shadow-sm";
             
             if (isAnswered) {
@@ -986,7 +987,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
 };
 
 // Fungsi helper untuk menerjemahkan ID gameType ke tulisan yang mudah dibaca
-const getGameTypeName = (type) => {
+const getGameTypeName = (type: any) => {
   switch(type) {
     case 'tebak_ayat': return 'Tebak Nomor Ayat';
     case 'sambung_ayat': return 'Sambung Ayat';
@@ -998,7 +999,7 @@ const getGameTypeName = (type) => {
   }
 };
 
-const ResultPage = ({ result, onRetry, onHome }) => {
+const ResultPage = ({ result, onRetry, onHome }: any) => {
   const totalQ = result.totalQuestions || QUESTION_COUNT;
   const isGood = result.correct >= Math.ceil(totalQ * 0.7);
   
@@ -1045,7 +1046,6 @@ const ResultPage = ({ result, onRetry, onHome }) => {
           
           <p className="text-slate-500 dark:text-slate-400 font-medium mb-2">Misi Selesai!</p>
           
-          {/* Label keterangan mode game yang baru ditambahkan */}
           <div className="inline-flex items-center justify-center bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full mb-6 border border-emerald-100 dark:border-emerald-800">
             🎮 Mode: {gameTypeName}
           </div>
@@ -1086,8 +1086,8 @@ const ResultPage = ({ result, onRetry, onHome }) => {
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home'); 
   const [gameConfig, setGameConfig] = useState({ mode: 'random', param: null, gameType: 'tebak_surat' });
-  const [lastResult, setLastResult] = useState(null);
-  const [allSurahs, setAllSurahs] = useState([]);
+  const [lastResult, setLastResult] = useState<any>(null);
+  const [allSurahs, setAllSurahs] = useState<any[]>([]);
   const [isDarkMode, setIsDarkMode] = useLocalStorage('cintaquran_theme', false);
   
   useEffect(() => {
@@ -1103,12 +1103,12 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  const handleNavigate = (page, config = null) => {
+  const handleNavigate = (page: any, config: any = null) => {
     if (config) setGameConfig(prev => ({ ...prev, ...config }));
     setCurrentPage(page);
   };
 
-  const handleGameFinish = (result) => {
+  const handleGameFinish = (result: any) => {
     setLastResult(result);
     setCurrentPage('result');
   };
