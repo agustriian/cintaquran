@@ -851,7 +851,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
         
         <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow border border-slate-100 dark:border-slate-700 flex items-center gap-2">
           <Trophy className="text-yellow-500 w-4 h-4" />
-          <span className="font-bold text-slate-700 dark:text-slate-200">{sessionScore} pts</span>
+          <span className="font-bold text-slate-700 dark:text-slate-200">{sessionScore} poin</span>
         </div>
       </div>
 
