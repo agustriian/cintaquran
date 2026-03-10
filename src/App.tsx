@@ -42,9 +42,12 @@ const injectFont = () => {
 };
 
 const generateUniqueRandoms = (count, min, max) => {
+  const range = max - min + 1;
+  if (range <= 0) return [];
+  const actualCount = Math.min(count, range);
   const set = new Set();
-  while (set.size < count) {
-    set.add(Math.floor(Math.random() * (max - min + 1)) + min);
+  while (set.size < actualCount) {
+    set.add(Math.floor(Math.random() * range) + min);
   }
   return Array.from(set);
 };
@@ -121,7 +124,7 @@ const fetchEquranSurahDetail = async (nomor) => {
   }
 };
 
-const fetchGameData = async (mode, juzNumber, allSurahs, gameType = 'tebak_ayat') => {
+const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') => {
   try {
     let ayahs = [];
     
@@ -140,13 +143,37 @@ const fetchGameData = async (mode, juzNumber, allSurahs, gameType = 'tebak_ayat'
          ayahs = results.map(r => r.data);
       }
     } else if (mode === 'juz') {
-      const res = await fetch(`${API_BASE}/juz/${juzNumber}/quran-uthmani`);
+      const res = await fetch(`${API_BASE}/juz/${param}/quran-uthmani`);
       const data = await res.json();
       const allJuzAyahs = data.data.ayahs;
       const randomIndices = generateUniqueRandoms(QUESTION_COUNT, 0, gameType === 'sambung_ayat' ? allJuzAyahs.length - 2 : allJuzAyahs.length - 1);
       ayahs = randomIndices.map(idx => {
          const a = allJuzAyahs[idx];
          if (gameType === 'sambung_ayat') return { ...a, nextText: allJuzAyahs[idx+1].text };
+         return a;
+      });
+    } else if (mode === 'surah') {
+      const res = await fetch(`${API_BASE}/surah/${param}/quran-uthmani`);
+      const responseJson = await res.json();
+      const surahInfo = responseJson.data;
+      const allSurahAyahs = surahInfo.ayahs;
+      const maxIdx = gameType === 'sambung_ayat' ? allSurahAyahs.length - 2 : allSurahAyahs.length - 1;
+      
+      if (maxIdx < 0) throw new Error("Surat ini terlalu pendek untuk dimainkan dalam mode ini.");
+      
+      const surahObj = {
+        number: surahInfo.number,
+        name: surahInfo.name,
+        englishName: surahInfo.englishName,
+        englishNameTranslation: surahInfo.englishNameTranslation,
+        revelationType: surahInfo.revelationType,
+        numberOfAyahs: surahInfo.numberOfAyahs
+      };
+
+      const randomIndices = generateUniqueRandoms(QUESTION_COUNT, 0, maxIdx);
+      ayahs = randomIndices.map(idx => {
+         const a = { ...allSurahAyahs[idx], surah: surahObj };
+         if (gameType === 'sambung_ayat') return { ...a, nextText: allSurahAyahs[idx+1].text };
          return a;
       });
     }
@@ -202,8 +229,8 @@ const fetchGameData = async (mode, juzNumber, allSurahs, gameType = 'tebak_ayat'
       return {
         id: ayah.number,
         text: questionText,
-        surahName: ayah.surah.englishName,
-        surahNumber: ayah.surah.number,
+        surahName: ayah.surah?.englishName,
+        surahNumber: ayah.surah?.number,
         ayahNumberInSurah: ayah.numberInSurah,
         juz: ayah.juz,
         options: options,
@@ -578,6 +605,9 @@ const ScopeSelectionPage = ({ onNavigate, onBack, gameType }) => {
         <Button variant="secondary" icon={<Grid size={20} />} onClick={() => onNavigate('juz_select', { gameType })}>
           Pilih Juz Tertentu
         </Button>
+        <Button variant="secondary" icon={<Book size={20} />} onClick={() => onNavigate('surah_select', { gameType })}>
+          Pilih Surat Tertentu
+        </Button>
       </div>
     </motion.div>
   );
@@ -606,6 +636,61 @@ const JuzSelectionPage = ({ onNavigate, onBack, gameType }) => {
           >
             <span className="text-xs text-slate-400 font-medium mb-1">Juz</span>
             <span className="text-2xl font-black">{juz}</span>
+          </motion.button>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }) => {
+  const [search, setSearch] = useState('');
+
+  const filteredSurahs = allSurahs.filter(s => 
+    s.englishName.toLowerCase().includes(search.toLowerCase()) || 
+    s.number.toString() === search
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-md mx-auto pb-8">
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={onBack} className="p-2 bg-white dark:bg-slate-800 rounded-full shadow hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+          <ChevronLeft className="text-slate-700 dark:text-slate-300" />
+        </button>
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Pilih Surat</h2>
+      </div>
+
+      <div className="mb-6 relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+        <input 
+          type="text" 
+          placeholder="Cari nama atau nomor surat..." 
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-12 pr-4 py-3 rounded-2xl border-none shadow-sm bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+        />
+      </div>
+
+      <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2 pb-20 scrollbar-hide">
+        {filteredSurahs.map(surah => (
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            key={surah.number}
+            onClick={() => onNavigate('game', { mode: 'surah', param: surah.number, gameType })}
+            className="w-full bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between hover:border-emerald-500 transition-colors text-left"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
+                {surah.number}
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 dark:text-slate-100">{surah.englishName}</h3>
+                <p className="text-xs text-slate-500">{surah.revelationType === 'Meccan' ? 'Makkiyah' : 'Madaniyah'} • {surah.numberOfAyahs} Ayat</p>
+              </div>
+            </div>
+            <div className="text-2xl font-arabic text-emerald-500" style={{ fontFamily: "'Amiri', serif" }}>
+              {surah.name.replace('سُورَةُ ', '')}
+            </div>
           </motion.button>
         ))}
       </div>
@@ -711,13 +796,14 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
   };
 
   const nextQuestion = () => {
-    if (currentIndex < QUESTION_COUNT - 1) {
+    if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setSelectedAnswer(null);
       setIsAnswered(false);
       setTimeLeft(TIMER_SECONDS);
     } else {
-      onFinish({ score: sessionScore, correct: correctCount });
+      // Menambahkan gameType agar bisa dibaca di halaman hasil
+      onFinish({ score: sessionScore, correct: correctCount, totalQuestions: questions.length, gameType: gameType });
     }
   };
 
@@ -778,7 +864,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
 
       <div className="mb-6 space-y-2">
         <div className="flex justify-between text-sm font-semibold text-slate-500 dark:text-slate-400">
-          <span>Soal {currentIndex + 1} / {QUESTION_COUNT}</span>
+          <span>Soal {currentIndex + 1} / {questions.length}</span>
           <span className={`flex items-center gap-1 ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
             <Clock size={16} /> {timeLeft}s
           </span>
@@ -787,7 +873,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
           <motion.div 
             className="bg-emerald-500 h-2.5 rounded-full"
             initial={{ width: '0%' }}
-            animate={{ width: `${((currentIndex + 1) / QUESTION_COUNT) * 100}%` }}
+            animate={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
             transition={{ duration: 0.3 }}
           />
         </div>
@@ -878,7 +964,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
                 btnClass = "bg-white/50 dark:bg-slate-800/50 text-slate-400 opacity-50"; 
               }
             } else {
-              btnClass += " hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 active:translate-y-[2px] active:shadow-none shadow-[0_4px_0_0_#e5e7eb] dark:shadow-[0_4px_0_0_#334155]";
+              btnClass += " hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-900/20 active:translate-y-[2px] active:shadow-none shadow-[0_4px_0_0_#e5e7eb] dark:shadow-[0_4px_0_0_#334155]";
             }
 
             return (
@@ -907,12 +993,28 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
   );
 };
 
+// Fungsi helper untuk menerjemahkan ID gameType ke tulisan yang mudah dibaca
+const getGameTypeName = (type) => {
+  switch(type) {
+    case 'tebak_ayat': return 'Tebak Nomor Ayat';
+    case 'sambung_ayat': return 'Sambung Ayat';
+    case 'lengkapi_ayat': return 'Lengkapi Ayat yang Hilang';
+    case 'tebak_juz': return 'Tebak Ini Juz Berapa';
+    case 'tebak_surat': return 'Tebak Nomor Surat';
+    case 'puzzle_ayat': return 'Puzzle Ayat';
+    default: return 'Misi';
+  }
+};
+
 const ResultPage = ({ result, onRetry, onHome }) => {
-  const isGood = result.correct >= 7;
+  const totalQ = result.totalQuestions || QUESTION_COUNT;
+  const isGood = result.correct >= Math.ceil(totalQ * 0.7);
   
   let badge = { icon: '🥉', title: 'Hafizh Pemula', color: 'text-orange-500' };
-  if (result.correct >= 9) badge = { icon: '🥇', title: 'Sahabat Quran', color: 'text-yellow-500' };
-  else if (result.correct >= 5) badge = { icon: '🥈', title: 'Pejuang Ayat', color: 'text-slate-400' };
+  if (result.correct >= Math.ceil(totalQ * 0.9)) badge = { icon: '🥇', title: 'Sahabat Quran', color: 'text-yellow-500' };
+  else if (result.correct >= Math.ceil(totalQ * 0.5)) badge = { icon: '🥈', title: 'Pejuang Ayat', color: 'text-slate-400' };
+
+  const gameTypeName = getGameTypeName(result.gameType);
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md mx-auto text-center space-y-6 pt-10">
@@ -948,7 +1050,13 @@ const ResultPage = ({ result, onRetry, onHome }) => {
             {badge.icon}
           </motion.div>
           <h2 className={`text-2xl font-black mb-1 ${badge.color}`}>{badge.title}</h2>
-          <p className="text-slate-500 dark:text-slate-400 font-medium mb-6">Misi Selesai!</p>
+          
+          <p className="text-slate-500 dark:text-slate-400 font-medium mb-2">Misi Selesai!</p>
+          
+          {/* Label keterangan mode game yang baru ditambahkan */}
+          <div className="inline-flex items-center justify-center bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full mb-6 border border-emerald-100 dark:border-emerald-800">
+            🎮 Game: {gameTypeName}
+          </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl">
@@ -960,7 +1068,7 @@ const ResultPage = ({ result, onRetry, onHome }) => {
             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl">
               <p className="text-sm text-slate-400 font-semibold mb-1">Jawaban Benar</p>
               <p className="text-3xl font-black text-slate-700 dark:text-slate-200">
-                {result.correct}<span className="text-lg text-slate-400">/{QUESTION_COUNT}</span>
+                {result.correct}<span className="text-lg text-slate-400">/{totalQ}</span>
               </p>
             </div>
           </div>
@@ -1049,6 +1157,10 @@ export default function App() {
           {currentPage === 'juz_select' && (
             <JuzSelectionPage key="juz_select" gameType={gameConfig.gameType} onNavigate={handleNavigate} onBack={() => setCurrentPage('scope_select')} />
           )}
+
+          {currentPage === 'surah_select' && (
+            <GameSurahSelectionPage key="surah_select" gameType={gameConfig.gameType} allSurahs={allSurahs} onNavigate={handleNavigate} onBack={() => setCurrentPage('scope_select')} />
+          )}
           
           {currentPage === 'game' && (
             <GamePage 
@@ -1060,6 +1172,7 @@ export default function App() {
               onFinish={handleGameFinish} 
               onBack={() => {
                 if (gameConfig.gameType === 'tebak_juz') return setCurrentPage('game_type_select');
+                if (gameConfig.mode === 'surah') return setCurrentPage('surah_select');
                 setCurrentPage(gameConfig.mode === 'juz' ? 'juz_select' : 'scope_select');
               }} 
               onHome={() => setCurrentPage('home')}
@@ -1082,7 +1195,7 @@ export default function App() {
           Dibuat dengan <Heart className="w-4 h-4 text-red-500 fill-red-500" /> untuk Umat
         </div>
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium tracking-wide">
-          by: agustriian
+          CintaQuran © 2026
         </p>
       </footer>
 
