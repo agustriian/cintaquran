@@ -91,17 +91,6 @@ const useLocalStorage = (key, initialValue) => {
 // ==========================================
 // 🌐 API SERVICES
 // ==========================================
-const fetchAllSurahs = async () => {
-  try {
-    const res = await fetch(`${API_BASE}/surah`);
-    const data = await res.json();
-    return data.data; 
-  } catch (error) {
-    console.error("Failed to fetch surahs", error);
-    return [];
-  }
-};
-
 const fetchEquranSurahs = async () => {
   try {
     const res = await fetch('https://equran.id/api/v2/surat');
@@ -189,6 +178,9 @@ const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') =>
 
     return ayahs.map((ayah) => {
       let correctAnswer, options = [], questionText = ayah.text, puzzleWords = [];
+      const surahNomor = ayah.surah?.number || ayah.surahNumber;
+      const matchedSurah = allSurahs.find(s => s.nomor === surahNomor);
+      const surahNameIndo = matchedSurah ? matchedSurah.namaLatin : (ayah.surah?.englishName || `Surat ke-${surahNomor}`);
 
       switch(gameType) {
         case 'tebak_ayat':
@@ -217,8 +209,17 @@ const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') =>
             break;
         case 'tebak_surat':
             questionText = ayah.text;
-            correctAnswer = ayah.surah.number;
-            options = shuffleArray([correctAnswer, ...getWrongNumbers(correctAnswer, 1, 114)]);
+            correctAnswer = surahNameIndo;
+            
+            let wrongSurahNames = new Set();
+            while(wrongSurahNames.size < 3) {
+                let r = Math.floor(Math.random() * 114) + 1;
+                if(r !== surahNomor) {
+                    const ws = allSurahs.find(s => s.nomor === r);
+                    if(ws) wrongSurahNames.add(ws.namaLatin);
+                }
+            }
+            options = shuffleArray([correctAnswer, ...Array.from(wrongSurahNames)]);
             break;
         case 'puzzle_ayat':
             correctAnswer = ayah.text;
@@ -229,8 +230,8 @@ const fetchGameData = async (mode, param, allSurahs, gameType = 'tebak_ayat') =>
       return {
         id: ayah.number,
         text: questionText,
-        surahName: ayah.surah?.englishName,
-        surahNumber: ayah.surah?.number,
+        surahName: surahNameIndo,
+        surahNumber: surahNomor,
         ayahNumberInSurah: ayah.numberInSurah,
         juz: ayah.juz,
         options: options,
@@ -282,19 +283,11 @@ const Card = ({ children, className = '' }) => (
 // 📄 PAGES
 // ==========================================
 
-const QuranSurahListPage = ({ onNavigate, onBack }) => {
-  const [surahs, setSurahs] = useState([]);
+const QuranSurahListPage = ({ onNavigate, onBack, allSurahs }) => {
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const loading = allSurahs.length === 0;
 
-  useEffect(() => {
-    fetchEquranSurahs().then(data => {
-      setSurahs(data);
-      setLoading(false);
-    });
-  }, []);
-
-  const filteredSurahs = surahs.filter(s => s.namaLatin.toLowerCase().includes(search.toLowerCase()));
+  const filteredSurahs = allSurahs.filter(s => s.namaLatin.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-md mx-auto pb-8">
@@ -554,7 +547,7 @@ const GameTypeSelectionPage = ({ onNavigate, onBack }) => {
     { id: 'sambung_ayat', label: 'Sambung Ayat', icon: <BookOpen size={24} className="text-emerald-500 mr-2" /> },
     { id: 'lengkapi_ayat', label: 'Lengkapi Ayat yang Hilang', icon: <CheckCircle2 size={24} className="text-emerald-500 mr-2" /> },
     { id: 'tebak_juz', label: 'Tebak Ini Juz Berapa', icon: <Map size={24} className="text-emerald-500 mr-2" /> },
-    { id: 'tebak_surat', label: 'Tebak Nomor Surat', icon: <Grid size={24} className="text-emerald-500 mr-2" /> },
+    { id: 'tebak_surat', label: 'Tebak Nama Surat', icon: <Grid size={24} className="text-emerald-500 mr-2" /> },
     { id: 'puzzle_ayat', label: 'Puzzle Ayat', icon: <Brain size={24} className="text-emerald-500 mr-2" /> },
   ];
 
@@ -647,8 +640,8 @@ const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }) => 
   const [search, setSearch] = useState('');
 
   const filteredSurahs = allSurahs.filter(s => 
-    s.englishName.toLowerCase().includes(search.toLowerCase()) || 
-    s.number.toString() === search
+    s.namaLatin.toLowerCase().includes(search.toLowerCase()) || 
+    s.nomor.toString() === search
   );
 
   return (
@@ -675,21 +668,21 @@ const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }) => 
         {filteredSurahs.map(surah => (
           <motion.button
             whileTap={{ scale: 0.98 }}
-            key={surah.number}
-            onClick={() => onNavigate('game', { mode: 'surah', param: surah.number, gameType })}
+            key={surah.nomor}
+            onClick={() => onNavigate('game', { mode: 'surah', param: surah.nomor, gameType })}
             className="w-full bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between hover:border-emerald-500 transition-colors text-left"
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
-                {surah.number}
+                {surah.nomor}
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 dark:text-slate-100">{surah.englishName}</h3>
-                <p className="text-xs text-slate-500">{surah.revelationType === 'Meccan' ? 'Makkiyah' : 'Madaniyah'} • {surah.numberOfAyahs} Ayat</p>
+                <h3 className="font-bold text-slate-800 dark:text-slate-100">{surah.namaLatin}</h3>
+                <p className="text-xs text-slate-500">{surah.tempatTurun === 'Mekah' ? 'Makkiyah' : 'Madaniyah'} • {surah.jumlahAyat} Ayat</p>
               </div>
             </div>
             <div className="text-2xl font-arabic text-emerald-500" style={{ fontFamily: "'Amiri', serif" }}>
-              {surah.name.replace('سُورَةُ ', '')}
+              {surah.nama}
             </div>
           </motion.button>
         ))}
@@ -888,7 +881,7 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
              currentQ.gameType === 'sambung_ayat' ? 'Sambung Ayat' :
              currentQ.gameType === 'lengkapi_ayat' ? 'Lengkapi Ayat yang Hilang' :
              currentQ.gameType === 'tebak_juz' ? 'Tebak Ini Juz Berapa' :
-             currentQ.gameType === 'tebak_surat' ? 'Tebak Nomor Surat' : 'Puzzle Ayat'}
+             currentQ.gameType === 'tebak_surat' ? 'Tebak Nama Surat' : 'Puzzle Ayat'}
           </div>
           
           <div className="min-h-[120px] flex items-center justify-center py-6">
@@ -979,7 +972,6 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
               >
                 <span>
                   {currentQ.gameType === 'tebak_ayat' ? `Ayat ${option}` : 
-                   currentQ.gameType === 'tebak_surat' ? `Surat ke-${option}` : 
                    currentQ.gameType === 'tebak_juz' ? `Juz ${option}` : option}
                 </span>
                 {isAnswered && option === currentQ.correctAnswer && <CheckCircle2 className="w-5 h-5 text-white flex-shrink-0" />}
@@ -1000,7 +992,7 @@ const getGameTypeName = (type) => {
     case 'sambung_ayat': return 'Sambung Ayat';
     case 'lengkapi_ayat': return 'Lengkapi Ayat yang Hilang';
     case 'tebak_juz': return 'Tebak Ini Juz Berapa';
-    case 'tebak_surat': return 'Tebak Nomor Surat';
+    case 'tebak_surat': return 'Tebak Nama Surat';
     case 'puzzle_ayat': return 'Puzzle Ayat';
     default: return 'Misi';
   }
@@ -1055,7 +1047,7 @@ const ResultPage = ({ result, onRetry, onHome }) => {
           
           {/* Label keterangan mode game yang baru ditambahkan */}
           <div className="inline-flex items-center justify-center bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full mb-6 border border-emerald-100 dark:border-emerald-800">
-            🎮 Game: {gameTypeName}
+            🎮 Mode: {gameTypeName}
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
@@ -1100,7 +1092,7 @@ export default function App() {
   
   useEffect(() => {
     injectFont();
-    fetchAllSurahs().then(data => setAllSurahs(data));
+    fetchEquranSurahs().then(data => setAllSurahs(data));
   }, []);
 
   useEffect(() => {
@@ -1139,7 +1131,7 @@ export default function App() {
           )}
 
           {currentPage === 'quran_surah_list' && (
-            <QuranSurahListPage key="quran_surah_list" onNavigate={handleNavigate} onBack={() => setCurrentPage('home')} />
+            <QuranSurahListPage key="quran_surah_list" allSurahs={allSurahs} onNavigate={handleNavigate} onBack={() => setCurrentPage('home')} />
           )}
           
           {currentPage === 'quran_read' && (
