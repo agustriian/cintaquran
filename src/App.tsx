@@ -678,7 +678,6 @@ const GameSurahSelectionPage = ({ onNavigate, onBack, gameType, allSurahs }: any
               </div>
               <div>
                 <h3 className="font-bold text-slate-800 dark:text-slate-100">{surah.namaLatin}</h3>
-                {/* Diperbarui untuk menampilkan arti surat */}
                 <p className="text-xs text-slate-500">{surah.arti} • {surah.jumlahAyat} Ayat</p>
               </div>
             </div>
@@ -769,11 +768,22 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
     return () => clearInterval(timerId);
   }, [timeLeft, loading, isAnswered, error]);
 
+  // BUG FIX: Mengatur state langsung di dalam blok yang sama agar tidak tertinggal
   const handleAnswerTimeOut = () => {
     setIsAnswered(true);
-    setTimeout(nextQuestion, 1500);
+    setTimeout(() => {
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+        setTimeLeft(TIMER_SECONDS);
+      } else {
+        onFinish({ score: sessionScore, correct: correctCount, totalQuestions: questions.length, gameType: gameType });
+      }
+    }, 1500);
   };
 
+  // BUG FIX: Mengkalkulasi nilai skor terakhir sebelum dikirim ke onFinish
   const handleAnswer = (option: any) => {
     if (isAnswered) return;
     
@@ -781,23 +791,29 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
     setSelectedAnswer(option);
     
     const currentQ = questions[currentIndex];
-    if (option === currentQ.correctAnswer) {
+    const isCorrect = option === currentQ.correctAnswer;
+
+    if (isCorrect) {
       setSessionScore(prev => prev + 10);
       setCorrectCount(prev => prev + 1);
     } 
 
-    setTimeout(nextQuestion, 1500);
-  };
-
-  const nextQuestion = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setSelectedAnswer(null);
-      setIsAnswered(false);
-      setTimeLeft(TIMER_SECONDS);
-    } else {
-      onFinish({ score: sessionScore, correct: correctCount, totalQuestions: questions.length, gameType: gameType });
-    }
+    setTimeout(() => {
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+        setTimeLeft(TIMER_SECONDS);
+      } else {
+        // Kami mengirimkan perhitungan manual untuk pertanyaan terakhir ini ke halaman hasil
+        onFinish({ 
+          score: sessionScore + (isCorrect ? 10 : 0), 
+          correct: correctCount + (isCorrect ? 1 : 0), 
+          totalQuestions: questions.length, 
+          gameType: gameType 
+        });
+      }
+    }, 1500);
   };
 
   if (loading) {
@@ -851,7 +867,6 @@ const GamePage = ({ mode, param, gameType, onFinish, onBack, onHome, allSurahs }
         
         <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow border border-slate-100 dark:border-slate-700 flex items-center gap-2">
           <Trophy className="text-yellow-500 w-4 h-4" />
-          {/* Diperbarui dari pts menjadi Poin */}
           <span className="font-bold text-slate-700 dark:text-slate-200">{sessionScore} Poin</span>
         </div>
       </div>
